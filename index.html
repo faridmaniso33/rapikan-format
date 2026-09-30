@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id" class="dark">
 <head>
@@ -222,7 +221,8 @@
                     // Clean specific prefixes like "1. ", "2. ", "- ", "— " but KEEP other numbers intact
                     let cleaned = line.replace(/^(\d+\.|-|—)\s*/, '').trim();
 
-                    if (cleaned) {
+                    // Pastikan dengan sangat ketat bahwa variabel 'cleaned' tidak kosong
+                    if (cleaned && cleaned.length > 0 && cleaned !== "") {
                         terms.push("- " + cleaned);
                     }
                 }
@@ -243,6 +243,9 @@
                     result += `${term}\n`;
                 });
             }
+
+            // Hapus seluruh spasi atau baris baru (\n) yang tersisa di paling akhir hasil teks
+            result = result.trim();
 
             // Update visual UI
             output.innerHTML = result.replace(/\n/g, '<br>');
