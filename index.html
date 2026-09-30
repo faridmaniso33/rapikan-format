@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id" class="dark">
 <head>
@@ -137,6 +138,9 @@
         </footer>
     </main>
 
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -256,38 +260,93 @@
             rawInput.focus();
         });
 
-        copyBtn.addEventListener('click', () => {
-            const hiddenOutput = document.getElementById('hiddenOutput');
-            if (!hiddenOutput.value) return;
+        // Function to show toast notification
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = 'bg-brand-800 text-white px-4 py-2 rounded-xl shadow-lg border border-purple-500/30 text-sm font-medium transform transition-all duration-300 translate-y-10 opacity-0 flex items-center gap-2';
+            toast.innerHTML = `<i class="ph ph-check-circle text-emerald-400 text-lg"></i> ${message}`;
+            
+            container.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            }, 10);
+            
+            // Animate out and remove
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
 
-            hiddenOutput.select();
-            hiddenOutput.setSelectionRange(0, 99999); // For mobile devices
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = document.getElementById('hiddenOutput').value;
+            if (!textToCopy) return;
+
+            // Robust fallback approach for mobile devices (especially iOS/Safari)
+            // Membangun textarea sementara agar terbaca oleh mobile browser
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            
+            // Menjadikan textarea tidak terlihat tetapi tetap dirender
+            textArea.style.position = "fixed";
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.width = "2em";
+            textArea.style.height = "2em";
+            textArea.style.padding = "0";
+            textArea.style.border = "none";
+            textArea.style.outline = "none";
+            textArea.style.boxShadow = "none";
+            textArea.style.background = "transparent";
+            
+            document.body.appendChild(textArea);
+            
+            // Focus & Select (sangat krusial untuk perangkat iOS)
+            textArea.focus();
+            textArea.select();
+            textArea.setSelectionRange(0, 99999);
 
             try {
-                document.execCommand('copy');
-                
-                // Visual feedback
-                const originalText = copyText.innerHTML;
-                const icon = copyBtn.querySelector('i');
-                
-                copyText.innerHTML = 'Disalin!';
-                icon.classList.replace('ph-copy', 'ph-check');
-                copyBtn.classList.replace('from-fuchsia-600', 'from-emerald-500');
-                copyBtn.classList.replace('to-purple-600', 'to-emerald-500');
-                copyBtn.classList.add('scale-105');
+                // Eksekusi copy
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    // Visual feedback pada Button
+                    const originalText = copyText.innerHTML;
+                    const icon = copyBtn.querySelector('i');
+                    
+                    copyText.innerHTML = 'Disalin!';
+                    icon.classList.replace('ph-copy', 'ph-check');
+                    copyBtn.classList.replace('from-fuchsia-600', 'from-emerald-500');
+                    copyBtn.classList.replace('to-purple-600', 'to-emerald-500');
+                    copyBtn.classList.add('scale-105');
 
-                setTimeout(() => {
-                    copyText.innerHTML = originalText;
-                    icon.classList.replace('ph-check', 'ph-copy');
-                    copyBtn.classList.replace('from-emerald-500', 'from-fuchsia-600');
-                    copyBtn.classList.replace('to-emerald-500', 'to-purple-600');
-                    copyBtn.classList.remove('scale-105');
-                }, 2000);
+                    // Munculkan toast
+                    showToast('Teks berhasil disalin!');
+
+                    setTimeout(() => {
+                        copyText.innerHTML = originalText;
+                        icon.classList.replace('ph-check', 'ph-copy');
+                        copyBtn.classList.replace('from-emerald-500', 'from-fuchsia-600');
+                        copyBtn.classList.replace('to-emerald-500', 'to-purple-600');
+                        copyBtn.classList.remove('scale-105');
+                    }, 2000);
+                } else {
+                    showToast('Gagal menyalin teks. Silakan salin manual.');
+                }
             } catch (err) {
                 console.error('Failed to copy: ', err);
+                showToast('Browser Anda tidak mendukung salin otomatis.');
+            } finally {
+                // Selalu hapus textarea buatan agar tidak meninggalkan sampah di memori
+                document.body.removeChild(textArea);
             }
             
-            // Remove selection
+            // Hapus blok warna seleksi biru di HP
             window.getSelection().removeAllRanges();
         });
 
